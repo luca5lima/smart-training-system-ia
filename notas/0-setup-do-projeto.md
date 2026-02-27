@@ -26,8 +26,16 @@ Isso garante que o projeto utilize o Node v24, versão recomendada para as funci
         node -v
     ```
 
+Instale o `pnpm` no **windows**. [Site](https://pnpm.io/pt/installation)
+```bash
+    Invoke-WebRequest https://get.pnpm.io/install.ps1 -UseBasicParsing | Invoke-Expression
+```
+> Apois isso, feche e abra novamente para carregar as variaveis de ambiente
+
+![type](../img/1.1-pnpm-install.PNG)
+
 ### 2. Inicialização do Projeto
-Iniciei o projeto com o `pnpm` para gerar o `package.json` base. [Site](https://pnpm.io/pt/installation)
+Iniciei o projeto com o `pnpm` para gerar o `package.json` base.
 ```bash
     pnpm init
 ```
@@ -55,9 +63,34 @@ Gerei o arquivo de configuração do compilador TS com foco em performance (`tar
 ```Bash
     npx tsc --init
 ```
+
+> Copie e cole esse código no `tsconfig.json`:
+```json
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "es2024",
+    "skipLibCheck": true,
+    "strict": true,
+    "outDir": "./dist"
+  },
+  "include": ["src"]
+}
+```
 ![tsconfig](../img/4-tsconfig.PNG)
 
 ### 6. Configurar o Servidor de Desemvolvimento
 ```bash
     pnpm add tsx @4.21.0
 ``` 
+
+### 7. Padronização de Ambiente e Motores (Engines)
+Para garantir que todos os desenvolvedores utilizem exatamente a mesma versão do Node.js, configurei uma trava de segurança no projeto.
+
+- Definição de Engines: No `package.json`, adicionei o campo `"engines"` especificando a versão `24.x` do Node.
+- Configuração do `.npmrc`: Criei o arquivo `.npmrc` com a instrução `engine-strict=true`. Isso força o gerenciador de pacotes a interromper a instalação caso a versão do Node esteja incorreta.
+- Validação na Prática: Realizei um teste tentando usar o Node `v22.20.0`, o que resultou no erro `ERR_PNPM_UNSUPPORTED_ENGINE`, comprovando que a trava está funcionando.
+
+![tsconfig](../img/7-engines-npmrc.PNG)
