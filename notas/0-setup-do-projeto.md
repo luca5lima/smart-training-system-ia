@@ -120,3 +120,62 @@ Para seguir padrões profissionais de desenvolvimento (12-Factor App), implement
 
 ![.env](../img/11-api-env.PNG)
 **Segurança:** O uso do `.env` permite que informações sensíveis sejam configuradas de forma distinta entre o ambiente de desenvolvimento (sua máquina) e o de produção.
+
+## Validação de Dados e Tipagem Avançada com ZOD 
+Para tornar a API do **Fit.AI** robusta e à prova de erros, implementei uma camada de validação de esquemas e provedores de tipos.
+[Site](https://zod.dev/)
+
+- **Integração com Zod:** Instalei as bibliotecas `zod@4.3.6` e `fastify-type-provider-zod@6.1.0`. O Zod permite definir exatamente o formato dos dados que a API deve receber e enviar.
+    ```bash
+        pnpm add zod@4.3.6 fastify-type-provider-zod@6.1.0
+    ``` 
+- **Type Provider:** Configurei o `ZodTypeProvider` no Fastify. Isso garante que o TypeScript entenda automaticamente o formato da resposta, oferecendo autocompletar e segurança de tipos (Type Safety) durante o desenvolvimento.
+[Site](https://github.com/turkerdev/fastify-type-provider-zod)
+- **Serialização e Validação:** Implementei o `setValidatorCompiler` e o `setSerializerCompiler`. Agora, se a API tentar retornar um dado que não segue o contrato definido, o Fastify emitirá um erro antes mesmo da resposta sair, garantindo a integridade dos dados.
+- **Documentação Automática:** A estrutura de `schema` dentro da rota (com `description`, `tags` e `response`) prepara a base para a geração automática de documentação via Swagger/OpenAPI.
+```ts
+    import "dotenv/config";
+
+    import Fastify from "fastify";
+    import {
+    serializerCompiler,
+    validatorCompiler,
+    ZodTypeProvider,
+    } from "fastify-type-provider-zod";
+    import z from "zod";
+
+    const app = Fastify({
+    logger: true,
+    });
+
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+
+    app.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/",
+    schema: {
+        description: "Hello world",
+        tags: ["Hello World"],
+        response: {
+        200: z.object({
+            message: z.string(),
+        }),
+        },
+    },
+    handler: () => {
+        return {
+        message: "Hello World",
+        };
+    },
+    });
+
+    try {
+    await app.listen({ port: Number(process.env.PORT) || 8081 });
+    } catch (err) {
+    app.log.error(err);
+    process.exit(1);
+    }
+``` 
+
+![.env](../img/12-api-zod.PNG)
