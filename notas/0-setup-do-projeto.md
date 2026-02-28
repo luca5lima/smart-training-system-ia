@@ -12,7 +12,7 @@ Nesta etapa inicial, foquei na preparação do ambiente de desenvolvimento para 
 ### 1. Gerenciamento de Versão com NVM
 Para evitar conflitos de versões entre diferentes projetos, utilizei o nvm-windows para instalar e gerenciar o Node.js.
 Isso garante que o projeto utilize o Node v24, versão recomendada para as funcionalidades de IA que iremos implementar.
-[Site](https://github.com/coreybutler/nvm-windows/releases) [Video](https://www.youtube.com/watch?v=zKTAYbcHob0)
+Asista o [Video](https://www.youtube.com/watch?v=zKTAYbcHob0) para entender como intalar **nvm** pelo [Site](https://github.com/coreybutler/nvm-windows/releases)
 - Instalação da versão específica: 
     ```bash
         nvm install 24
@@ -26,7 +26,7 @@ Isso garante que o projeto utilize o Node v24, versão recomendada para as funci
         node -v
     ```
 
-Instale o `pnpm` no **windows**. [Site](https://pnpm.io/pt/installation)
+Instale o `pnpm` no **windows**. Acesse o [Site](https://pnpm.io/pt/installation) para instalar
 ```bash
     Invoke-WebRequest https://get.pnpm.io/install.ps1 -UseBasicParsing | Invoke-Expression
 ```
@@ -64,7 +64,7 @@ Gerei o arquivo de configuração do compilador TS com foco em performance (`tar
     npx tsc --init
 ```
 
-> Copie e cole esse código no `tsconfig.json`:
+> Copie e cole esse código subistituindo o existente no arquivo `tsconfig.json`:
 ```json
 {
   "$schema": "https://json.schemastore.org/tsconfig",
@@ -93,4 +93,30 @@ Para garantir que todos os desenvolvedores utilizem exatamente a mesma versão d
 - Configuração do `.npmrc`: Criei o arquivo `.npmrc` com a instrução `engine-strict=true`. Isso força o gerenciador de pacotes a interromper a instalação caso a versão do Node esteja incorreta.
 - Validação na Prática: Realizei um teste tentando usar o Node `v22.20.0`, o que resultou no erro `ERR_PNPM_UNSUPPORTED_ENGINE`, comprovando que a trava está funcionando.
 
-![tsconfig](../img/7-engines-npmrc.PNG)
+![engines](../img/7-engines-npmrc.PNG)
+
+## 🤵 Desenvolvimento da API com Fastify e Segurança de Ambiente
+Nesta etapa, o foco foi transformar o servidor básico em uma API estruturada, utilizando boas práticas de configuração para garantir que dados sensíveis (como portas e chaves de IA futuramente) não fiquem expostos no código.
+
+### Implementação do Fastify
+Instalei e configurei o **Fastify**, aproveitando seu sistema de logs nativo para monitorar as requisições em tempo real. [Site](https://fastify.dev/)
+```bash
+    pnpm add fastify@5.7.4
+``` 
+
+- **Primeiro Endpoint:** Criei uma rota `GET` na raiz (`/`) que retorna um objeto JSON `{ "hello": "world" }`, servindo como teste de conectividade da API.
+- **Monitoramento:** Ativei o `logger: true` na instância do Fastify, o que permite visualizar detalhes de cada requisição (método, URL, endereço remoto) diretamente no terminal.
+
+![fastify](../img/10-api-fastify.PNG)
+
+## Gestão de Variáveis de Ambiente (`.env`)
+Para seguir padrões profissionais de desenvolvimento (12-Factor App), implementei o gerenciamento de configurações via arquivos `.env`. [Site](https://www.npmjs.com/package/dotenv)
+
+1. **Instalação do Dotenv:** Adicionei a biblioteca `dotenv@17.3.1` para carregar as variáveis do arquivo `.env` para o `process.env` do Node.js.
+    ```bash
+        pnpm add dotenv@17.3.1
+    ``` 
+2. **Configuração Dinâmica:** Substituí a porta fixa no código por uma variável de ambiente: `Number(process.env.PORT) || 3000`.
+
+![.env](../img/11-api-env.PNG)
+**Segurança:** O uso do `.env` permite que informações sensíveis sejam configuradas de forma distinta entre o ambiente de desenvolvimento (sua máquina) e o de produção.
