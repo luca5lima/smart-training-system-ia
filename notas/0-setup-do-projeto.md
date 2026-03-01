@@ -179,3 +179,45 @@ Para tornar a API do **Fit.AI** robusta e à prova de erros, implementei uma cam
 ``` 
 
 ![.env](../img/12-api-zod.PNG)
+
+## Automação de Documentação com Swagger e OpenAPI
+Para facilitar o consumo da API do **Fit.AI** e permitir testes rápidos dos endpoints, implementei a documentação interativa utilizando o padrão OpenAPI 3.0.
+- **Integração com Swagger:** Instalei os pacotes `@fastify/swagger@9.7.0` e `@fastify/swagger-ui@5.2.5`.
+    ```bash
+        pnpm add @fastify/swagger@9.7.0 @fastify/swagger-ui@5.2.5
+    ```
+- **Configuração do OpenAPI:** Registrei o plugin `fastifySwagger`, definindo metadados como o título "Treinos API", versão "1.0.0" e a descrição técnica do projeto.
+```ts
+    import fastifySwagger from "@fastify/swagger";
+    import fastifySwaggerUI from "@fastify/swagger-ui";    
+```
+- **Transformação de Tipos:** Utilizei a função `jsonSchemaTransform` para integrar automaticamente os esquemas de validação do **Zod** com a documentação do Swagger. Isso garante que a documentação esteja sempre sincronizada com o código real da aplicação.
+```ts
+    jsonSchemaTransform,
+```
+```ts
+await app.register(fastifySwagger, {
+  openapi: {
+    info: {
+      title: "Bootcamp Treinos API",
+      description: "API para o bootcamp de treinos do FSC",
+      version: "1.0.0",
+    },
+    servers: [
+      {
+        description: "Localhost",
+        url: "http://localhost:8081",
+      },
+    ],
+  },
+  transform: jsonSchemaTransform,
+});
+
+await app.register(fastifySwaggerUI, {
+  routePrefix: "/docs",
+});
+```
+![swagger](../img/13-api-swagger.PNG)
+- **Interface Gráfica (Swagger UI):** Configurei o endpoint `/docs` para servir a interface visual do Swagger. Isso permite que qualquer pessoa visualize as rotas disponíveis, os esquemas de dados e até execute requisições de teste diretamente pelo navegador.
+
+![swagger-docs](../img/14-swagger-docs.PNG)
