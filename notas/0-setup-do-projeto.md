@@ -221,3 +221,131 @@ await app.register(fastifySwaggerUI, {
 - **Interface Gráfica (Swagger UI):** Configurei o endpoint `/docs` para servir a interface visual do Swagger. Isso permite que qualquer pessoa visualize as rotas disponíveis, os esquemas de dados e até execute requisições de teste diretamente pelo navegador.
 
 ![swagger-docs](../img/14-swagger-docs.PNG)
+
+## 🗄️ Persistência de Dados e Infraestrutura
+Nesta etapa, configurei a camada de banco de dados do **Fit.AI**, focando em produtividade, tipagem segura e isolamento de ambiente.
+
+### 1. Modelagem com Prisma ORM
+Escolhi o **Prisma** como ORM (Object-Relational Mapping) pela sua integração perfeita com o TypeScript.
+
+- **Instalação**: Adicionei o `@prisma/client` e o CLI do `prisma` para gerenciar as migrações e o esquema.
+    ```bash
+        pnpm add @prisma/client@7.4.0 @prisma/adapter-pg@7.4.0
+    ``` 
+    ```bash
+        pnpm add prisma@7.4.0 -D
+    ``` 
+    ```bash
+        npx prisma init
+    ``` 
+    ![db-prisma-istall](../img/15-db-prisma.PNG)
+
+    Resultado: Gerou o arquivo `schema.prima` e add o `DATABASE_URL`, para melhor visualização instalei a extensão do **Prisma**
+    ![db-prisma-extensao](../img/16-db-extensao.PNG)
+- **Esquema Relacional**: Desenvolvi o `schema.prisma` com as entidades principais:
+    - **WorkoutPlan**: Plano mestre vinculado a um usuário.
+    - **WorkoutDay**: Dias da semana (utilizando `enum WeekDay`).
+    - **WorkoutExercise**: Detalhes dos exercícios (séries, repetições, tempo de descanso).
+- **Relacionamentos**: Implementei relações de `1:N` entre Planos, Dias e Exercícios, garantindo a integridade referencial.
+    ```ts
+        generator client {
+        provider = "prisma-client"
+        output   = "../src/generated/prisma"
+        }
+
+        datasource db {
+        provider = "postgresql"
+        }
+
+        model User {
+        id           String @id @default(uuid())
+        workoutPlans WorkoutPlan[]
+        }
+
+        model WorkoutPlan {
+        id          String @id @default(uuid())
+        name        String
+        userId      String
+        user        User @relation(fields: [userId], references: [id])
+        workoutDays WorkoutDay[]
+        isActive Boolean @default(true)
+        createdAt DateTime @default(now())
+        updatedAt DateTime @updatedAt
+        }
+
+        enum WeekDay {
+        MONDAY
+        TUESDAY
+        WEDNESDAY
+        THURSDAY
+        FRIDAY
+        SATURDAY
+        SUNDAY
+        }
+
+        model WorkoutDay {
+        id            String @id @default(uuid())
+        name          String
+        workoutPlanId String
+        workoutPlan WorkoutPlan @relation(fields: [workoutPlanId], references: [id])
+        isRest  Boolean @default(false)
+        weekDay WeekDay
+        exercises WorkoutExercise[]
+        createdAt DateTime @default(now())
+        updatedAt DateTime @updatedAt
+        }
+
+        model WorkoutExercise {
+        id    String @id @default(uuid())
+        name  String
+        order Int
+        workoutDayId String
+        workoutDay WorkoutDay @relation(fields: [workoutDayId], references: [id])
+        sets Int
+        reps Int
+        restTimeInSeconds Int
+        createdAt DateTime @default(now())
+        updatedAt DateTime @updatedAt
+        }
+    ``` 
+    ![db-schema](../img/17-db-schema-format.PNG)
+
+### 2. Infraestrutura com Docker e PostgreSQL
+Para garantir que o banco de dados seja idêntico em qualquer ambiente de desenvolvimento, utilizei o **Docker Compose**.
+- **PostgreSQL 16**: Implementei um container rodando a imagem oficial do Postgres Alpine (leve e segura).
+- **Orquestração**: Criei o arquivo `docker-compose.yml` para gerencia automaticamente as variáveis de ambiente (`POSTGRES_USER`, `POSTGRES_DB`) e o mapeamento de portas (`5432`).
+    ```yml
+        services:
+          postgres:
+            image: postgres:16-alpine
+            container_name: treinos-api-postgres
+            environment:
+              POSTGRES_USER: postgres
+              POSTGRES_PASSWORD: password
+              POSTGRES_DB: treinos-api
+            ports:
+              - "5432:5432"
+            volumes:
+              - postgres_data:/var/lib/postgresql/data
+
+        volumes:
+          postgres_data:    
+  ``` 
+- **Volumes**: Configurei volumes para garantir que os dados dos treinos não sejam perdidos ao reiniciar os containers.
+    ```bash
+        docker compose up -d
+    ``` 
+![db-docker](../img/18-docker-compose-up.PNG)
+> Use o comando `npx prisma format` para formatar o arquivo
+
+### 3. Sincronização e Gerenciamento
+- **Prisma DB Push**: Comando para sincronizar meu modelo diretamente com o container do Postgres de forma ágil durante o desenvolvimento.
+    ```bash
+        npx prisma db push
+    ``` 
+- **Prisma Studio**: Ativei a interface visual do Prisma para explorar os dados e validar as inserções sem precisar de comandos SQL manuais.
+    ```bash
+        npx prisma studio
+    ``` 
+
+![db-studio](../img/19-db-prisma-studio.PNG)
