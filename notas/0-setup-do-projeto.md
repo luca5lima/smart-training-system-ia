@@ -459,3 +459,28 @@ Comando para instalar o `@fastify/cors`
         });
     ```
 ![auth](../img/23-auth-fastify-cors.PNG)
+
+## Documentação Interativa e Moderna com [Scalar](https://github.com/scalar/scalar)
+Para elevar o nível da experiência do desenvolvedor (DX) no **Fit.AI**, substituí a interface padrão do Swagger pelo [Scalar](https://github.com/scalar/scalar). Essa ferramenta oferece uma visualização mais limpa, snippets de código em diversas linguagens e um cliente HTTP integrado muito mais poderoso.
+
+### 1. Instalação e Integração
+Utilizei a biblioteca oficial para o ecossistema Fastify:
+
+- **Comando**: 
+    ```bash
+        pnpm add @scalar/fastify-api-reference@1.44.20
+    ```
+    ![auth](../img/24-docmentação.PNG)
+- **Implementação**: O plugin foi registrado no arquivo principal, configurado para servir a documentação na rota `/docs`.
+![auth](../img/25-docs.PNG)
+
+### 2. Arquitetura Multi-Fonte (Multi-source)
+Um dos grandes diferenciais desta implementação foi a capacidade de consolidar diferentes contextos de API em uma única interface:
+
+- **Treinos API**: Documentação da lógica de negócio (planos, exercícios, dashboard), consumindo o esquema gerado em `/swagger.json`.
+- **Auth API**: Integração direta com os endpoints de autenticação do Better Auth, facilitando o teste de fluxos de login e sessão.
+
+### 3. Funcionalidades de Destaque
+- **Cliente HTTP Integrado**: Permite realizar requisições de teste diretamente da documentação com um console de resposta detalhado.
+- **Snippets de Código**: Gera automaticamente exemplos de como consumir cada rota em linguagens como JavaScript (Fetch/Axios), Python, Go, entre outras.
+- **Sincronização com Zod**: Como a API utiliza `fastify-type-provider-zod`, o Scalar exibe com precisão todos os campos obrigatórios, tipos de dados e validações de erro.
