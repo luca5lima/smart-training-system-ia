@@ -246,7 +246,6 @@ Escolhi o **Prisma** como ORM (Object-Relational Mapping) pela sua integração 
     - **WorkoutPlan**: Plano mestre vinculado a um usuário.
     - **WorkoutDay**: Dias da semana (utilizando `enum WeekDay`).
     - **WorkoutExercise**: Detalhes dos exercícios (séries, repetições, tempo de descanso).
-- **Relacionamentos**: Implementei relações de `1:N` entre Planos, Dias e Exercícios, garantindo a integridade referencial.
     ```ts
         generator client {
         provider = "prisma-client"
@@ -308,7 +307,9 @@ Escolhi o **Prisma** como ORM (Object-Relational Mapping) pela sua integração 
         updatedAt DateTime @updatedAt
         }
     ``` 
-    ![db-schema](../img/17-db-schema-format.PNG)
+- **Relacionamentos**: Implementei relações de `1:N` entre Planos, Dias e Exercícios, garantindo a integridade referencial.
+    ![db-schema](../img/17-db-schema-format.PNG) 
+    > Use o comando `npx prisma format` para formatar o arquivo
 
 ### 2. Infraestrutura com Docker e PostgreSQL
 Para garantir que o banco de dados seja idêntico em qualquer ambiente de desenvolvimento, utilizei o **Docker Compose**.
@@ -336,7 +337,6 @@ Para garantir que o banco de dados seja idêntico em qualquer ambiente de desenv
         docker compose up -d
     ``` 
 ![db-docker](../img/18-docker-compose-up.PNG)
-> Use o comando `npx prisma format` para formatar o arquivo
 
 ### 3. Sincronização e Gerenciamento
 - **Prisma DB Push**: Comando para sincronizar meu modelo diretamente com o container do Postgres de forma ágil durante o desenvolvimento.
@@ -349,3 +349,113 @@ Para garantir que o banco de dados seja idêntico em qualquer ambiente de desenv
     ``` 
 
 ![db-studio](../img/19-db-prisma-studio.PNG)
+
+## 🔐 Autenticação com Better Auth
+Para gerenciar o acesso ao **Fit.AI**, implementei o **[Better Auth](https://better-auth.com/docs/installation)**, uma solução de autenticação agnóstica de framework que se integra perfeitamente ao ecossistema TypeScript e ao Prisma ORM.
+
+### 1. Configuração e Instalação
+Iniciei o processo instalando a biblioteca principal e as dependências de integração.
+
+- **Instalação**: Utilizei o comando 
+    ```bash
+        pnpm add better-auth@1.4.18
+    ```
+- **Variáveis de Ambiente**: Configurei as chaves de segurança necessárias no arquivo `.env`, incluindo `BETTER_AUTH_SECRET` e `BETTER_AUTH_URL` apontando para a porta `8081`. Gere um `BETTER_AUTH_SECRET` no [Site](https://better-auth.com/docs/installation)
+- Rode o comando para gerar os arquivos `src/generated`:
+    ```bash
+        npx prisma generete
+    ```
+- **Configuração da Instância**: Criei o arquivo `lib/auth.ts` configurando métodos de login por e-mail e senha (`emailAndPassword: { enabled: true }`) e defini as origens confiáveis (`trustedOrigins`) como `http://localhost:3000`. Copie e cole esse código:
+    ```ts
+        import { PrismaPg } from "@prisma/adapter-pg";
+        import { betterAuth } from "better-auth";
+        import { prismaAdapter } from "better-auth/adapters/prisma";
+        import { openAPI } from "better-auth/plugins";
+
+        import { PrismaClient } from "../generated/prisma/client.js";
+
+        const prisma = new PrismaClient({
+        adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+        });
+
+        export const auth = betterAuth({
+        trustedOrigins: ["http://localhost:3000"],
+        emailAndPassword: {
+            enabled: true,
+        },
+        database: prismaAdapter(prisma, {
+            provider: "postgresql",
+        }),
+        plugins: [openAPI()],
+        });
+    ```
+![auth](../img/20-better-auth-install.PNG)
+![auth](../img/21-auth-prisma-generate.PNG)
+### 2. Integração com Prisma e Banco de Dados
+O [Better Auth](https://better-auth.com/docs/installation) utiliza o banco de dados para persistir sessões e dados de usuário através de um adaptador.
+
+- **Prisma Adapter**: Configurei o adaptador `prismaAdapter` apontando para a instância do `PrismaClient`.
+- **Geração de Tabelas**: Utilizei a CLI do Better Auth para gerar automaticamente as tabelas necessárias no banco de dados.
+    - **Resolução de Problemas**: Após enfrentar erros de versão na CLI, utilizei esse comando para garantir compatibilidade.
+        ```bash
+            npx @better-auth/cli@latest generate
+        ```
+    - **Sincronização**: O comando sobrescreveu o arquivo schema.prisma com as novas entidades (`User`, `Session`, `Account`, etc.) e em seguida executei esse comando para atualizar o cliente local.
+        ```bash
+            npx prisma generate 
+        ```
+
+![auth](../img/22-auth-cli-generate.PNG)
+### 3. Configuração do Servidor e Segurança
+Integrei a instância de autenticação no ponto de entrada da API. Acesse o [Site](https://better-auth.com/docs/integrations/fastify) para ter acesso a documentação mais detalhada
+
+- **Política de CORS**: No arquivo `index.ts`, registrei o plugin `@fastify/cors` para permitir requisições seguras entre o front-end e o back-end, configurando explicitamente `credentials: true` para permitir o envio de cookies de sessão.
+Comando para instalar o `@fastify/cors`
+    ```bash
+        pnpm add @fastify/cors@11.2.0
+    ```
+- **Integração OpenAPI**: Registrei o plugin `openAPI()` no [Better Auth](https://better-auth.com/docs/integrations/fastify) para que os endpoints de autenticação sejam automaticamente documentados no Swagger.
+    ```ts
+        await app.register(fastifyCors, {
+        origin: ["http://localhost:3000"],
+        credentials: true,
+        });
+    ```
+- Copie e cole esse código no `index.ts`:
+    ```ts
+        app.route({
+        method: ["GET", "POST"],
+        url: "/api/auth/*",
+        async handler(request, reply) {
+            try {
+            // Construct request URL
+            const url = new URL(request.url, `http://${request.headers.host}`);
+
+            // Convert Fastify headers to standard Headers object
+            const headers = new Headers();
+            Object.entries(request.headers).forEach(([key, value]) => {
+                if (value) headers.append(key, value.toString());
+            });
+            // Create Fetch API-compatible request
+            const req = new Request(url.toString(), {
+                method: request.method,
+                headers,
+                ...(request.body ? { body: JSON.stringify(request.body) } : {}),
+            });
+            // Process authentication request
+            const response = await auth.handler(req);
+            // Forward response to client
+            reply.status(response.status);
+            response.headers.forEach((value, key) => reply.header(key, value));
+            reply.send(response.body ? await response.text() : null);
+            } catch (error) {
+            app.log.error(error);
+            reply.status(500).send({
+                error: "Internal authentication error",
+                code: "AUTH_FAILURE",
+            });
+        }
+        },
+        });
+    ```
+![auth](../img/23-auth-fastify-cors.PNG)
