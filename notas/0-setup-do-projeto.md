@@ -8,6 +8,15 @@ Nesta etapa inicial, foquei na preparação do ambiente de desenvolvimento para 
 - **Linguagem:** TypeScript 5.9.3 (Strict Mode)
 - **Runtime de Desenvolvimento:** `tsx` para execução rápida sem transpilação manual.
 
+## 📑 Sumário
+
+1. [🛠️ Setup do Ambiente](#🚀-passo-a-passo-da-configuração)
+2. [⚙️ Padronização e Engines](#⚙-padronização-de-ambiente-e-motores-engines)
+3. [🔌 Desenvolvimento da API com Fastify](#🔌-desenvolvimento-da-api-com-fastify-e-segurança-de-ambiente)
+4. [🗄️ Persistência de Dados e Infraestrutura](#💾-persistência-de-dados-e-infraestrutura)
+5. [🔐 Autenticação com Better Auth](#🔐-autenticação-com-better-auth)
+6. [📖 Documentação Interativa com Scalar](#📝-documentação-interativa-e-moderna-com-scalar)
+
 ## 🚀 Passo a Passo da Configuração
 ### 1. Gerenciamento de Versão com NVM
 Para evitar conflitos de versões entre diferentes projetos, utilizei o nvm-windows para instalar e gerenciar o Node.js.
@@ -86,7 +95,7 @@ Gerei o arquivo de configuração do compilador TS com foco em performance (`tar
     pnpm add tsx @4.21.0
 ``` 
 
-### 7. Padronização de Ambiente e Motores (Engines)
+## ⚙ Padronização de Ambiente e Motores (Engines)
 Para garantir que todos os desenvolvedores utilizem exatamente a mesma versão do Node.js, configurei uma trava de segurança no projeto.
 
 - Definição de Engines: No `package.json`, adicionei o campo `"engines"` especificando a versão `24.x` do Node.
@@ -95,7 +104,7 @@ Para garantir que todos os desenvolvedores utilizem exatamente a mesma versão d
 
 ![engines](../img/7-engines-npmrc.PNG)
 
-## 🤵 Desenvolvimento da API com Fastify e Segurança de Ambiente
+## 🔌 Desenvolvimento da API com Fastify e Segurança de Ambiente
 Nesta etapa, o foco foi transformar o servidor básico em uma API estruturada, utilizando boas práticas de configuração para garantir que dados sensíveis (como portas e chaves de IA futuramente) não fiquem expostos no código.
 
 ### Implementação do Fastify
@@ -222,7 +231,7 @@ await app.register(fastifySwaggerUI, {
 
 ![swagger-docs](../img/14-swagger-docs.PNG)
 
-## 🗄️ Persistência de Dados e Infraestrutura
+## 💾 Persistência de Dados e Infraestrutura
 Nesta etapa, configurei a camada de banco de dados do **Fit.AI**, focando em produtividade, tipagem segura e isolamento de ambiente.
 
 ### 1. Modelagem com Prisma ORM
@@ -350,8 +359,8 @@ Para garantir que o banco de dados seja idêntico em qualquer ambiente de desenv
 
 ![db-studio](../img/19-db-prisma-studio.PNG)
 
-## 🔐 Autenticação com Better Auth
-Para gerenciar o acesso ao **Fit.AI**, implementei o **[Better Auth](https://better-auth.com/docs/installation)**, uma solução de autenticação agnóstica de framework que se integra perfeitamente ao ecossistema TypeScript e ao Prisma ORM.
+## 🔐 Autenticação com [Better Auth](https://better-auth.com/docs/installation)
+Para gerenciar o acesso ao **Fit.AI**, implementei o [Better Auth](https://better-auth.com/docs/installation), uma solução de autenticação agnóstica de framework que se integra perfeitamente ao ecossistema TypeScript e ao Prisma ORM.
 
 ### 1. Configuração e Instalação
 Iniciei o processo instalando a biblioteca principal e as dependências de integração.
@@ -460,7 +469,7 @@ Comando para instalar o `@fastify/cors`
     ```
 ![auth](../img/23-auth-fastify-cors.PNG)
 
-## Documentação Interativa e Moderna com [Scalar](https://github.com/scalar/scalar)
+## 📝 Documentação Interativa e Moderna com [Scalar](https://github.com/scalar/scalar)
 Para elevar o nível da experiência do desenvolvedor (DX) no **Fit.AI**, substituí a interface padrão do Swagger pelo [Scalar](https://github.com/scalar/scalar). Essa ferramenta oferece uma visualização mais limpa, snippets de código em diversas linguagens e um cliente HTTP integrado muito mais poderoso.
 
 ### 1. Instalação e Integração
@@ -470,9 +479,9 @@ Utilizei a biblioteca oficial para o ecossistema Fastify:
     ```bash
         pnpm add @scalar/fastify-api-reference@1.44.20
     ```
-    ![auth](../img/24-docmentação.PNG)
+    ![docs](../img/24-docmentação.PNG)
 - **Implementação**: O plugin foi registrado no arquivo principal, configurado para servir a documentação na rota `/docs`.
-![auth](../img/25-docs.PNG)
+![docs](../img/25-docs.PNG)
 
 ### 2. Arquitetura Multi-Fonte (Multi-source)
 Um dos grandes diferenciais desta implementação foi a capacidade de consolidar diferentes contextos de API em uma única interface:
@@ -484,3 +493,22 @@ Um dos grandes diferenciais desta implementação foi a capacidade de consolidar
 - **Cliente HTTP Integrado**: Permite realizar requisições de teste diretamente da documentação com um console de resposta detalhado.
 - **Snippets de Código**: Gera automaticamente exemplos de como consumir cada rota em linguagens como JavaScript (Fetch/Axios), Python, Go, entre outras.
 - **Sincronização com Zod**: Como a API utiliza `fastify-type-provider-zod`, o Scalar exibe com precisão todos os campos obrigatórios, tipos de dados e validações de erro.
+
+### 4. Teste
+Teste de **cadastro de usuario** no sistema
+- Certifique que o docker está rodando e execute com o comando:
+    ```bash
+        docker compose up -d
+    ```
+- Suba a API com o comando:
+    ```bash
+        pnpm run dev
+    ```
+- Cadastre um usuario no sistema
+    ![docs](../img/26-docs-email.PNG)
+    ![docs](../img/27-docs-email-cadastrar.PNG)
+- Veja o cadastro no banco de dados
+    ```bash
+        npx prisma studio
+    ```
+    ![docs](../img/28-docs-cadastrar-db.PNG)
