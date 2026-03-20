@@ -2,13 +2,23 @@ import z from "zod";
 
 import { WeekDay } from "../generated/prisma/enums.js";
 
-export const ErrosSchema = z.object({
+export const ErrorSchema = z.object({
     error: z.string(),
     code: z.string(),
 })
 
 export const StartWorkoutSessionSchema = z.object({
   userWorkoutSessionId: z.uuid(),
+});
+
+export const UpdateWorkoutSessionBodySchema = z.object({
+  completedAt: z.iso.datetime(),
+});
+
+export const UpdateWorkoutSessionSchema = z.object({
+  id: z.uuid(),
+  startedAt: z.iso.datetime(),
+  completedAt: z.iso.datetime(),
 });
 
 export const WorkoutPlanSchema = z.object({
